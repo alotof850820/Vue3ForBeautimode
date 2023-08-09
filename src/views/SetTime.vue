@@ -15,23 +15,34 @@
         </el-table-column>
         <el-table-column label="Time">
           <template #="{ row }">
-            <div v-if="row.meal" class="demo-time-range">
+            <div
+              v-if="row.meal"
+              v-for="(item, index) in row.timeList"
+              class="demo-time-range"
+            >
               <el-time-select
-                v-model="row.start"
-                class="mr-4"
+                v-model="item.start"
+                :min-time="setMin(row.timeList, index)"
+                :max-time="item.end"
                 placeholder="Start time"
                 start="00:00"
                 step="00:30"
                 end="23:59"
               />
               <el-time-select
-                v-model="row.end"
+                :disabled="item.start === ''"
+                v-model="item.end"
+                :min-time="item.start"
+                :max-time="setMax(row.timeList, index)"
                 placeholder="End time"
                 start="00:00"
                 step="00:30"
                 end="23:59"
-              /></div
-          ></template>
+              />
+              <!-- 加刪除 -->
+            </div>
+            <el-button v-if="row.meal" @click="addTimeList(row)">Add</el-button>
+          </template>
         </el-table-column>
       </el-table>
     </el-card>
@@ -39,7 +50,7 @@
 </template>
 <script setup lang="ts">
 import { useRouter } from "vue-router";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import apiTime from "../utils/apiSetTime.json";
 
 const router = useRouter();
@@ -48,50 +59,43 @@ const dataList = ref<any>([
   {
     date: "Sunday",
     meal: false,
-    start: "",
-    end: "",
+    timeList: [{ start: "", end: "" }],
     id: "1",
   },
   {
     date: "Monday",
     meal: true,
-    start: "",
-    end: "",
+    timeList: [{ start: "", end: "" }],
     id: "2",
   },
   {
     date: "Tuesday",
     meal: true,
-    start: "",
-    end: "",
+    timeList: [{ start: "", end: "" }],
     id: "3",
   },
   {
     date: "Wednesday",
     meal: true,
-    start: "",
-    end: "",
+    timeList: [{ start: "", end: "" }],
     id: "4",
   },
   {
     date: "Thursday",
     meal: true,
-    start: "",
-    end: "",
+    timeList: [{ start: "", end: "" }],
     id: "5",
   },
   {
     date: "Friday",
     meal: true,
-    start: "",
-    end: "",
+    timeList: [{ start: "", end: "" }],
     id: "6",
   },
   {
     date: "Saturday",
     meal: true,
-    start: "",
-    end: "",
+    timeList: [{ start: "", end: "" }],
     id: "7",
   },
 ]);
@@ -108,16 +112,34 @@ const setTime = (data: any) => {
   let startAt = "";
   let endAt = "";
   let trigger = false;
-
+  let start = false;
+  let time = <any>[];
+  if (data === "111111111111111111111111111111111111111111111111") {
+    startAt = "00:00";
+    endAt = "23:59";
+    time.push({
+      start: startAt,
+      end: endAt,
+    });
+    return time;
+  }
   data.split("").map((unit: string, index: number) => {
     if (!trigger && unit === "1") {
       trigger = true;
+      start = true;
       const miunte = index * 30;
       startAt = convertMinutes(miunte);
-    } else if (trigger && unit === "0") {
+    } else if (trigger && unit === "0" && start) {
       trigger = false;
+      start = false;
+      // push
       const miunte = index * 30;
+
       endAt = convertMinutes(miunte);
+      time.push({
+        start: startAt,
+        end: endAt,
+      });
     } else if (trigger && index === 47) {
       if (!endAt) {
         startAt = "00:00";
@@ -128,27 +150,86 @@ const setTime = (data: any) => {
       endAt = "23:59";
     }
   });
-  return {
-    start: startAt,
-    end: endAt,
-  };
+  return time;
+};
+
+const setMin: any = (timeList: any, index: number) => {
+  if (timeList[index - 1]?.end) {
+    let time = timeList[index - 1]?.end;
+    let binaryString = "";
+    const [hours, minutes] = time.split(":").map(Number);
+    const totalMinutes = hours * 60 + minutes;
+    for (let i = 0; i < 48; i++) {
+      binaryString += i * 30 < totalMinutes ? "1" : "0";
+    }
+    let lastIndex = binaryString.lastIndexOf("1");
+    if (lastIndex !== -1) {
+      let modifiedString =
+        binaryString.substring(0, lastIndex) +
+        "0" +
+        binaryString.substring(lastIndex + 1);
+
+      return setTime(modifiedString)[0].end;
+    }
+  }
+};
+const setMax: any = (timeList: any, index: number) => {
+  if (timeList[index + 1]?.start) {
+    let time = timeList[index + 1]?.start;
+    let binaryString = "";
+    const [hours, minutes] = time.split(":").map(Number);
+    const totalMinutes = hours * 60 + minutes;
+    for (let i = 0; i < 48; i++) {
+      binaryString += i * 30 < totalMinutes ? "1" : "0";
+    }
+    let lastIndex = binaryString.indexOf("0");
+    if (lastIndex !== -1) {
+      let modifiedString =
+        binaryString.substring(0, lastIndex) +
+        "1" +
+        binaryString.substring(lastIndex + 1);
+      return setTime(modifiedString)[0].end;
+    }
+  }
 };
 
 const getTime = () => {
   dataList.value = dataList.value.map((day: any, i: number) => {
     let time = setTime(Object.values(apiTime)[i]);
+
     return {
-      date: day.date,
-      meal: day.meal,
-      start: time.start,
-      end: time.end,
-      id: day.id,
+      ...day,
+      timeList: time,
     };
   });
+};
+const addTimeList = (row: any) => {
+  row.timeList.push({ start: "", end: "" });
 };
 const goRoute = () => {
   router.push("/TodoList");
 };
+
+watch(
+  () => dataList.value,
+  () => {
+    dataList.value.map((item: any) => {
+      for (let i = 0; i < item.timeList.length; i++) {
+        if (item.timeList[i]?.start === item.timeList[i - 1]?.end) {
+          item.timeList[i].start = item.timeList[i - 1].end;
+          item.timeList[i - 1].start = "";
+          item.timeList[i - 1].end = "";
+          item.timeList = item.timeList.filter(
+            (time: any) => time.start !== "" || time.end !== ""
+          );
+          return item.timeList;
+        }
+      }
+    });
+  },
+  { deep: true }
+);
+
 getTime();
 </script>
 <style scoped lang="scss"></style>
