@@ -1,10 +1,12 @@
 <template>
   <div>
     <el-card>
-      <el-button @click="goRoute">Go TodoList</el-button>
+      <el-button @click="goRoute" style="background-color: red"
+        >Go TodoList</el-button
+      >
       <el-table :data="dataList" style="width: 100%">
         <el-table-column prop="date" label="Date" width="180" />
-        <el-table-column label="whether to provide meals" width="180">
+        <el-table-column label="whether to provide meals" width="210">
           <template #="{ row }">
             <el-switch
               v-model="row.meal"
@@ -15,33 +17,52 @@
         </el-table-column>
         <el-table-column label="Time">
           <template #="{ row }">
-            <div
-              v-if="row.meal"
-              v-for="(item, index) in row.timeList"
-              class="demo-time-range"
-            >
-              <el-time-select
-                v-model="item.start"
-                :min-time="setMin(row.timeList, index)"
-                :max-time="item.end"
-                placeholder="Start time"
-                start="00:00"
-                step="00:30"
-                end="23:59"
-              />
-              <el-time-select
-                :disabled="item.start === ''"
-                v-model="item.end"
-                :min-time="item.start"
-                :max-time="setMax(row.timeList, index)"
-                placeholder="End time"
-                start="00:00"
-                step="00:30"
-                end="23:59"
-              />
-              <!-- 加刪除 -->
+            <div v-if="row.meal" style="width: 54%">
+              <div
+                v-for="(item, index) in row.timeList"
+                style="width: 100%; margin: 5px"
+              >
+                <el-time-select
+                  v-model="item.start"
+                  :min-time="setMin(row.timeList, index)"
+                  :max-time="item.end"
+                  placeholder="Start time"
+                  start="00:00"
+                  step="00:30"
+                  end="23:59"
+                />
+                &nbsp&nbsp-&nbsp&nbsp
+                <el-time-select
+                  :disabled="item.start === ''"
+                  v-model="item.end"
+                  :min-time="item.start"
+                  :max-time="setMax(row.timeList, index)"
+                  placeholder="End time"
+                  start="00:00"
+                  step="00:30"
+                  end="23:59"
+                />
+
+                <el-button
+                  style="margin: 5px 0px 5px 17px; background-color: #f4f4f4"
+                  @click="row.timeList.splice(index, 1)"
+                  >Del</el-button
+                >
+              </div>
+
+              <el-button
+                style="
+                  width: 100%;
+                  margin: 5px;
+                  background-color: #8fc325;
+                  color: white;
+                "
+                v-if="row.meal"
+                @click="addTimeList(row)"
+              >
+                Add
+              </el-button>
             </div>
-            <el-button v-if="row.meal" @click="addTimeList(row)">Add</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -52,10 +73,17 @@
 import { useRouter } from "vue-router";
 import { ref, watch } from "vue";
 import apiTime from "../utils/apiSetTime.json";
+import type {
+  TimeType,
+  TimeListType,
+  DataType,
+  AllDataListType,
+} from "../utils/apiSetTimeType";
+import { ElMessage } from "element-plus";
 
 const router = useRouter();
 
-const dataList = ref<any>([
+const dataList = ref<AllDataListType>([
   {
     date: "Sunday",
     meal: false,
@@ -99,61 +127,53 @@ const dataList = ref<any>([
     id: "7",
   },
 ]);
-const convertMinutes = (minutes: number) => {
+const setMinutes = (minutes: number) => {
   const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  const formattedTime = `${hours.toString().padStart(2, "0")}:${remainingMinutes
+  const minute = minutes % 60;
+  const time = `${hours.toString().padStart(2, "0")}:${minute
     .toString()
     .padStart(2, "0")}`;
-  return formattedTime;
+  return time;
 };
-
-const setTime = (data: any) => {
+const setTime = (data: string) => {
   let startAt = "";
   let endAt = "";
-  let trigger = false;
   let start = false;
-  let time = <any>[];
-  if (data === "111111111111111111111111111111111111111111111111") {
-    startAt = "00:00";
-    endAt = "23:59";
-    time.push({
-      start: startAt,
-      end: endAt,
-    });
-    return time;
-  }
+  let change = false;
+  let time = <TimeListType>[];
+
   data.split("").map((unit: string, index: number) => {
-    if (!trigger && unit === "1") {
-      trigger = true;
+    if (!start && unit === "1") {
+      change = true;
       start = true;
       const miunte = index * 30;
-      startAt = convertMinutes(miunte);
-    } else if (trigger && unit === "0" && start) {
-      trigger = false;
+      startAt = setMinutes(miunte);
+    } else if (start && unit === "0" && start) {
+      change = true;
       start = false;
-      // push
       const miunte = index * 30;
-
-      endAt = convertMinutes(miunte);
+      endAt = setMinutes(miunte);
       time.push({
         start: startAt,
         end: endAt,
       });
-    } else if (trigger && index === 47) {
-      if (!endAt) {
-        startAt = "00:00";
-        endAt = "23:59";
-      }
-    } else if (!trigger && index === 0) {
-      startAt = "00:00";
-      endAt = "23:59";
+    }
+    if (!change && index === 47) {
+      time.push({
+        start: "00:00",
+        end: "23:59",
+      });
+    }
+    if (change && index === 47 && unit === "1") {
+      time.push({
+        start: startAt,
+        end: "23:59",
+      });
     }
   });
   return time;
 };
-
-const setMin: any = (timeList: any, index: number) => {
+const setMin = (timeList: TimeListType, index: number) => {
   if (timeList[index - 1]?.end) {
     let time = timeList[index - 1]?.end;
     let binaryString = "";
@@ -173,7 +193,7 @@ const setMin: any = (timeList: any, index: number) => {
     }
   }
 };
-const setMax: any = (timeList: any, index: number) => {
+const setMax = (timeList: TimeListType, index: number) => {
   if (timeList[index + 1]?.start) {
     let time = timeList[index + 1]?.start;
     let binaryString = "";
@@ -192,9 +212,8 @@ const setMax: any = (timeList: any, index: number) => {
     }
   }
 };
-
 const getTime = () => {
-  dataList.value = dataList.value.map((day: any, i: number) => {
+  dataList.value = dataList.value.map((day: DataType, i: number) => {
     let time = setTime(Object.values(apiTime)[i]);
 
     return {
@@ -203,7 +222,15 @@ const getTime = () => {
     };
   });
 };
-const addTimeList = (row: any) => {
+const addTimeList = (row: DataType) => {
+  if (row.timeList[row.timeList.length - 1].start === "") {
+    ElMessage({
+      type: "error",
+      message: "請填入時間",
+    });
+    return;
+  }
+
   row.timeList.push({ start: "", end: "" });
 };
 const goRoute = () => {
@@ -211,16 +238,17 @@ const goRoute = () => {
 };
 
 watch(
-  () => dataList.value,
+  () => dataList.value.map((item) => item.timeList),
   () => {
-    dataList.value.map((item: any) => {
+    dataList.value.map((item: DataType) => {
       for (let i = 0; i < item.timeList.length; i++) {
         if (item.timeList[i]?.start === item.timeList[i - 1]?.end) {
           item.timeList[i].start = item.timeList[i - 1].end;
           item.timeList[i - 1].start = "";
           item.timeList[i - 1].end = "";
+
           item.timeList = item.timeList.filter(
-            (time: any) => time.start !== "" || time.end !== ""
+            (time: TimeType) => time.start !== "" || time.end !== ""
           );
           return item.timeList;
         }
