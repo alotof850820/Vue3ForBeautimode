@@ -21,5 +21,6 @@ export interface DataType {
   meal: boolean;
   timeList: TimeListType;
   id: string;
+  allDay: boolean;
 }
 export type AllDataListType = DataType[];

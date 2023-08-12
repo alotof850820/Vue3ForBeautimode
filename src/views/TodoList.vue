@@ -1,9 +1,8 @@
 <template>
   <div>
     <el-card class="box-card">
-      <!-- cardTop -->
       <el-button type="primary" @click="addTodo">Add User title</el-button>
-      <el-button @click="router.push('/SetTime')">Go SetTime</el-button>
+
       <!-- table -->
       <el-table :data="allTodos" border style="margin: 10px 0px">
         <el-table-column width="80px" align="center" type="index" />
@@ -57,7 +56,6 @@
 </template>
 <script setup lang="ts">
 import { reactive, ref } from "vue";
-import { useRouter } from "vue-router";
 import type {
   TodoResponseType,
   TodoType,
@@ -70,8 +68,6 @@ import {
   apiDeltodo,
 } from "../utils/api.ts";
 import { ElMessage } from "element-plus";
-
-const router = useRouter();
 
 const allTodos = ref<AllTodoArrayType>([]);
 const dialogVisible = ref<boolean>(false);

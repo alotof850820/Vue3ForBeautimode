@@ -1,9 +1,6 @@
 <template>
   <div>
     <el-card>
-      <el-button @click="goRoute" style="background-color: red"
-        >Go TodoList</el-button
-      >
       <el-table :data="dataList" style="width: 100%">
         <el-table-column prop="date" label="Date" width="180" />
         <el-table-column label="whether to provide meals" width="210">
@@ -13,20 +10,33 @@
               class="mb-2"
               active-text="本日供餐"
               inactive-text="本日不供餐"
-          /></template>
+            />
+          </template>
+        </el-table-column>
+        <el-table-column label="是否全日供餐" width="130">
+          <template #="{ row }">
+            <el-checkbox
+              v-if="row.meal"
+              v-model="row.allDay"
+              @change="row.allDay ? true : false"
+              label="全日供餐"
+            />
+          </template>
         </el-table-column>
         <el-table-column label="Time">
           <template #="{ row }">
-            <div v-if="row.meal" style="width: 54%">
+            <div v-if="row.meal && !row.allDay" style="width: 100%">
               <div
                 v-for="(item, index) in row.timeList"
                 style="width: 100%; margin: 5px"
               >
+                <!-- element UI 無法顯示23:59 除非自訂義組件或是這用step="00:01" 但會loading很久 -->
                 <el-time-select
                   v-model="item.start"
                   :min-time="setMin(row.timeList, index)"
                   :max-time="item.end"
                   placeholder="Start time"
+                  :clearable="false"
                   start="00:00"
                   step="00:30"
                   end="23:59"
@@ -38,6 +48,7 @@
                   :min-time="item.start"
                   :max-time="setMax(row.timeList, index)"
                   placeholder="End time"
+                  :clearable="false"
                   start="00:00"
                   step="00:30"
                   end="23:59"
@@ -46,18 +57,26 @@
                 <el-button
                   style="margin: 5px 0px 5px 17px; background-color: #f4f4f4"
                   @click="row.timeList.splice(index, 1)"
-                  >Del</el-button
                 >
+                  Del
+                </el-button>
+                <el-button
+                  v-if="row.timeList.length === index + 1"
+                  style="margin: 5px 0px 5px 17px; background-color: #f4f4f4"
+                  @click="row.timeList[index].end = '23:59'"
+                >
+                  至23:59
+                </el-button>
               </div>
 
               <el-button
                 style="
-                  width: 100%;
+                  width: 61.5%;
                   margin: 5px;
                   background-color: #8fc325;
                   color: white;
                 "
-                v-if="row.meal"
+                v-if="checkAllDay(row)"
                 @click="addTimeList(row)"
               >
                 Add
@@ -70,7 +89,6 @@
   </div>
 </template>
 <script setup lang="ts">
-import { useRouter } from "vue-router";
 import { ref, watch } from "vue";
 import apiTime from "../utils/apiSetTime.json";
 import type {
@@ -81,52 +99,62 @@ import type {
 } from "../utils/apiSetTimeType";
 import { ElMessage } from "element-plus";
 
-const router = useRouter();
-
 const dataList = ref<AllDataListType>([
   {
     date: "Sunday",
     meal: false,
     timeList: [{ start: "", end: "" }],
     id: "1",
+    allDay: false,
   },
   {
     date: "Monday",
     meal: true,
     timeList: [{ start: "", end: "" }],
     id: "2",
+    allDay: false,
   },
   {
     date: "Tuesday",
     meal: true,
     timeList: [{ start: "", end: "" }],
     id: "3",
+    allDay: false,
   },
   {
     date: "Wednesday",
     meal: true,
     timeList: [{ start: "", end: "" }],
     id: "4",
+    allDay: false,
   },
   {
     date: "Thursday",
     meal: true,
     timeList: [{ start: "", end: "" }],
     id: "5",
+    allDay: false,
   },
   {
     date: "Friday",
     meal: true,
     timeList: [{ start: "", end: "" }],
     id: "6",
+    allDay: false,
   },
   {
     date: "Saturday",
     meal: true,
     timeList: [{ start: "", end: "" }],
     id: "7",
+    allDay: false,
   },
 ]);
+
+const checkAllDay = (row: DataType) => {
+  return !row.timeList.some((item) => item.end === "23:59");
+};
+
 const setMinutes = (minutes: number) => {
   const hours = Math.floor(minutes / 60);
   const minute = minutes % 60;
@@ -177,8 +205,8 @@ const setMin = (timeList: TimeListType, index: number) => {
   if (timeList[index - 1]?.end) {
     let time = timeList[index - 1]?.end;
     let binaryString = "";
-    const [hours, minutes] = time.split(":").map(Number);
-    const totalMinutes = hours * 60 + minutes;
+    const [hours, minutes] = time.split(":");
+    const totalMinutes = +hours * 60 + +minutes;
     for (let i = 0; i < 48; i++) {
       binaryString += i * 30 < totalMinutes ? "1" : "0";
     }
@@ -197,8 +225,8 @@ const setMax = (timeList: TimeListType, index: number) => {
   if (timeList[index + 1]?.start) {
     let time = timeList[index + 1]?.start;
     let binaryString = "";
-    const [hours, minutes] = time.split(":").map(Number);
-    const totalMinutes = hours * 60 + minutes;
+    const [hours, minutes] = time.split(":");
+    const totalMinutes = +hours * 60 + +minutes;
     for (let i = 0; i < 48; i++) {
       binaryString += i * 30 < totalMinutes ? "1" : "0";
     }
@@ -223,7 +251,7 @@ const getTime = () => {
   });
 };
 const addTimeList = (row: DataType) => {
-  if (row.timeList[row.timeList.length - 1].start === "") {
+  if (row.timeList[row.timeList.length - 1]?.start === "") {
     ElMessage({
       type: "error",
       message: "請填入時間",
@@ -233,17 +261,14 @@ const addTimeList = (row: DataType) => {
 
   row.timeList.push({ start: "", end: "" });
 };
-const goRoute = () => {
-  router.push("/TodoList");
-};
 
 watch(
-  () => dataList.value.map((item) => item.timeList),
+  () => dataList.value,
   () => {
     dataList.value.map((item: DataType) => {
       for (let i = 0; i < item.timeList.length; i++) {
         if (item.timeList[i]?.start === item.timeList[i - 1]?.end) {
-          item.timeList[i].start = item.timeList[i - 1].end;
+          item.timeList[i].start = item.timeList[i - 1].start;
           item.timeList[i - 1].start = "";
           item.timeList[i - 1].end = "";
 
@@ -252,6 +277,13 @@ watch(
           );
           return item.timeList;
         }
+      }
+      if (
+        item.timeList[0]?.start === "00:00" &&
+        item.timeList[0]?.end === "23:59"
+      ) {
+        item.allDay = true;
+        item.timeList = [];
       }
     });
   },
