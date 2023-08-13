@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { TodoResponseType, TodoType } from "./type";
+import type { TodoResponseType, TodoType } from "./apiTodoListType";
 
 const header = {
   headers: {

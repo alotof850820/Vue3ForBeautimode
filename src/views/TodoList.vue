@@ -60,13 +60,13 @@ import type {
   TodoResponseType,
   TodoType,
   AllTodoArrayType,
-} from "../utils/type";
+} from "../utils/apiTodoListType";
 import {
   apiGetAlltodos,
   apiAddtodo,
   apiUpdatetodo,
   apiDeltodo,
-} from "../utils/api.ts";
+} from "../utils/apiTodoList.ts";
 import { ElMessage } from "element-plus";
 
 const allTodos = ref<AllTodoArrayType>([]);
@@ -157,3 +157,4 @@ const delTodo = async (row: TodoType) => {
 getAllTodo();
 </script>
 <style scoped lang="scss"></style>
+../utils/apiTodoList.ts

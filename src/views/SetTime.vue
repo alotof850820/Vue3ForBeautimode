@@ -30,7 +30,8 @@
                 v-for="(item, index) in row.timeList"
                 style="width: 100%; margin: 5px"
               >
-                <!-- element UI 無法顯示23:59 除非自訂義組件或是這用step="00:01" 但會loading很久 -->
+                <!-- element UI time-select 無法顯示23:59 除非自訂義組件或使用dropdown給list或是這用step="00:01" 但會loading很久 -->
+                <!-- 這邊先周轉使用button 解決 -->
                 <el-time-select
                   v-model="item.start"
                   :min-time="setMin(row.timeList, index)"
@@ -61,7 +62,11 @@
                   Del
                 </el-button>
                 <el-button
-                  v-if="row.timeList.length === index + 1"
+                  v-if="
+                    row.timeList.length === index + 1 &&
+                    row.timeList[index].start !== '' &&
+                    row.timeList[index].end !== '23:59'
+                  "
                   style="margin: 5px 0px 5px 17px; background-color: #f4f4f4"
                   @click="row.timeList[index].end = '23:59'"
                 >
