@@ -81,7 +81,7 @@
 
               <el-button
                 style="
-                  width: 61.5%;
+                  width: 58.5%;
                   margin: 5px;
                   background-color: #8fc325;
                   color: white;
@@ -302,8 +302,4 @@ watch(
 
 getTime();
 </script>
-<style scoped lang="scss">
-.el-select-dropdown__item.selected {
-  color: red;
-}
-</style>
+<style scoped lang="scss"></style>
