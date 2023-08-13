@@ -3,17 +3,18 @@
     <el-card>
       <el-table :data="dataList" style="width: 100%">
         <el-table-column prop="date" label="Date" width="180" />
-        <el-table-column label="whether to provide meals" width="210">
+        <el-table-column label="本日是否供餐" width="210">
           <template #="{ row }">
             <el-switch
               v-model="row.meal"
               class="mb-2"
               active-text="本日供餐"
               inactive-text="本日不供餐"
+              style="--el-switch-on-color: #8fc325; --el-switch-off-color: #aaa"
             />
           </template>
         </el-table-column>
-        <el-table-column label="是否全日供餐" width="130">
+        <el-table-column label="全日供餐" width="130">
           <template #="{ row }">
             <el-checkbox
               v-if="row.meal"
@@ -38,9 +39,11 @@
                   :max-time="item.end"
                   placeholder="Start time"
                   :clearable="false"
+                  prefix-icon=""
                   start="00:00"
                   step="00:30"
                   end="23:59"
+                  style="--el-color-primary: #8fc325"
                 />
                 &nbsp&nbsp-&nbsp&nbsp
                 <el-time-select
@@ -50,9 +53,11 @@
                   :max-time="setMax(row.timeList, index)"
                   placeholder="End time"
                   :clearable="false"
+                  prefix-icon=""
                   start="00:00"
                   step="00:30"
                   end="23:59"
+                  style="--el-color-primary: #8fc325"
                 />
 
                 <el-button
@@ -297,4 +302,8 @@ watch(
 
 getTime();
 </script>
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.el-select-dropdown__item.selected {
+  color: red;
+}
+</style>
