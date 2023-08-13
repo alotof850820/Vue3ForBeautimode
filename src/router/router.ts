@@ -5,11 +5,11 @@ const routes = [
   { path: "/SetTime", component: () => import("../views/SetTime.vue") },
   {
     path: "/codeReviewOne",
-    component: () => import("../views/codeReviewOne.vue"),
+    component: () => import("../views/CodeReviewOne.vue"),
   },
   {
     path: "/codeReviewTwo",
-    component: () => import("../views/codeReviewTwo.vue"),
+    component: () => import("../views/CodeReviewTwo.vue"),
   },
   {
     path: "/:pathMatch(.*)*",
